@@ -14,7 +14,7 @@ QSys = R6::R6Class("QSys",
         # @param master  rZMQ address of the master (if NULL we create it here)
         initialize = function(data=NULL, ports=6000:8000, master=NULL) {
             private$zmq_context = rzmq::init.context()
-            private$socket = rzmq::init.socket(private$zmq_context, "ZMQ_REP")
+            private$socket = rzmq::init.socket(private$zmq_context, "ZMQ_ROUTER")
             private$port = bind_avail(private$socket, ports)
             private$listen = sprintf("tcp://%s:%i",
                                      Sys.info()[['nodename']], private$port)
@@ -112,9 +112,11 @@ QSys = R6::R6Class("QSys",
             rcv = rzmq::poll.socket(list(private$socket),
                                     list("read"), timeout=timeout)
 
-            if (rcv[[1]]$read)
-                rzmq::receive.socket(private$socket)
-            else # timeout reached
+            if (rcv[[1]]$read) {
+                re = rzmq::receive.multipart(private$socket)
+                private$cur = re[[1]]
+                unserialize(re[[3]])
+            } else # timeout reached
                 NULL
         },
 
@@ -178,11 +180,22 @@ QSys = R6::R6Class("QSys",
         token = "not set",
         worker_pool = list(),
         worker_stats = list(),
+        cur = NULL, # current worker we are talking to, for ROUTER
 
         send = function(..., serialize=TRUE) {
             rzmq::send.socket(socket = private$socket,
-                              data = list(...),
-                              serialize = serialize)
+                              data = private$cur,
+                              serialize = FALSE,
+                              send.more = TRUE)
+            rzmq::send.null.msg(socket = private$socket, send.more=TRUE)
+            if (serialize)
+                rzmq::send.socket(socket = private$socket,
+                                  data = list(...),
+                                  serialize = serialize)
+            else
+                rzmq::send.socket(socket = private$socket,
+                                  data = list(...)[[1]],
+                                  serialize = serialize)
         }
     ),
 
