@@ -12,12 +12,19 @@ QSys = R6::R6Class("QSys",
         # @param data    List with elements: fun, const, export, seed
         # @param ports   Range of ports to choose from
         # @param master  rZMQ address of the master (if NULL we create it here)
-        initialize = function(data=NULL, reuse=FALSE, ports=6000:8000, master=NULL,
-                              protocol="tcp", node=Sys.info()[['nodename']]) {
-            private$zmq_context = rzmq::init.context(3L)
+        initialize = function(data=NULL, reuse=FALSE, ports=6000:8000,
+                              master=NULL, protocol="tcp", threads=3,
+                              node=Sys.info()[['nodename']]) {
+            private$zmq_context = rzmq::init.context(as.integer(threads))
             private$socket = rzmq::init.socket(private$zmq_context, "ZMQ_REP")
-            private$port = bind_avail(private$socket, ports)
-            private$listen = sprintf("%s://%s:%i", protocol, node, private$port)
+
+            if (protocol %in% c("tcp", "pgm", "epgm")) {
+                private$port = bind_avail(private$socket, ports)
+                private$listen = sprintf("%s://%s:%i", protocol, node, private$port)
+            } else {
+                private$port = node
+                private$listen = sprintf("%s://%s", protocol, node)
+            }
             private$timer = proc.time()
             private$reuse = reuse
 

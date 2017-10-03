@@ -38,7 +38,7 @@ ssh_proxy = function(ctl, job, qsys_id=qsys_default) {
     qsys = get(toupper(qsys_id), envir=parent.env(environment()))
     if ("setup" %in% ls(qsys))
         qsys = qsys$setup()
-    qsys = qsys$new(data=msg, master=net_fwd)
+    qsys = qsys$new(data=msg, master=net_fwd, protocol="tcp")
     redirect = list(id="PROXY_READY", data_url=qsys$url, token=qsys$data_token)
     rzmq::send.socket(ctl_socket, data=redirect)
     message("sent PROXY_READY to master ctl")
