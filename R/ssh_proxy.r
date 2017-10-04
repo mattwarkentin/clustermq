@@ -19,8 +19,12 @@ ssh_proxy = function(ctl, job, qsys_id=qsys_default) {
 
     # set up local network forward to master (or SSH tunnel)
     fwd_in = rzmq::init.socket(context, "ZMQ_XREP")
-    net_port = bind_avail(fwd_in, 8000:9999)
-    net_fwd = sprintf("tcp://%s:%i", Sys.info()[['nodename']], net_port)
+    if (qsys_id == "multicore") {
+        net_fwd = "inproc://net_fwd"
+    } else {
+        net_port = bind_avail(fwd_in, 8000:9999)
+        net_fwd = sprintf("tcp://%s:%i", Sys.info()[['nodename']], net_port)
+    }
     message("forwarding local network from: ", net_fwd)
 
     # connect to master
@@ -38,7 +42,7 @@ ssh_proxy = function(ctl, job, qsys_id=qsys_default) {
     qsys = get(toupper(qsys_id), envir=parent.env(environment()))
     if ("setup" %in% ls(qsys))
         qsys = qsys$setup()
-    qsys = qsys$new(data=msg, master=net_fwd, protocol="tcp")
+    qsys = qsys$new(data=msg, master=net_fwd)
     redirect = list(id="PROXY_READY", data_url=qsys$url, token=qsys$data_token)
     rzmq::send.socket(ctl_socket, data=redirect)
     message("sent PROXY_READY to master ctl")

@@ -5,11 +5,8 @@ MULTICORE = R6::R6Class("MULTICORE",
     inherit = QSys,
 
     public = list(
-        initialize = function(..., protocol="inproc") {
-            if (protocol == "inproc")
-                super$initialize(..., protocol="inproc", node="cmq_local", threads=0)
-            else
-                super$initialize(..., node="localhost")
+        initialize = function(...) {
+            super$initialize(..., protocol="inproc", node="cmq_local", threads=0)
         },
 
         submit_jobs = function(n_jobs, template=list(), log_worker=FALSE) {
@@ -20,11 +17,6 @@ MULTICORE = R6::R6Class("MULTICORE",
 
         cleanup = function(dirty=FALSE) {
             super$cleanup()
-#            parallel::stopCluster(private$cluster)
         }
-    ),
-
-    private = list(
-#        cluster = NULL
     )
 )
