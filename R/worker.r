@@ -39,6 +39,10 @@ worker = function(master, timeout=getOption("clustermq.worker.timeout", 600),
         if (events[1]) {
             tic = proc.time()
             msg = zmq$receive()
+            if (is.null(msg$id)) {
+                message("msg: ", msg)
+                next
+            }
             delta = proc.time() - tic
             message(sprintf("> %s (%.3fs wait)", msg$id, delta[3]))
         } else

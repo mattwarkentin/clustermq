@@ -92,7 +92,8 @@ public:
             try {
                 rc = zmq::poll(pitems, timeout);
             } catch(zmq::error_t &e) {
-                if (errno != EINTR || pending_interrupt())
+                std::cout << "errno: " << errno << "; rc: " << rc << "\n";
+                if (errno != EINTR || pending_interrupt()) // what causes EINTR except Ctrl+C?
                     Rf_error(e.what());
                 if (timeout != -1) {
                     ms dt = std::chrono::duration_cast<ms>(Time::now() - start);
